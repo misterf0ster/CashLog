@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: cashlog_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "12345"
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+
+volumes:
+  postgres_data:
