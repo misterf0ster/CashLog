@@ -28,7 +28,7 @@
 
 | Метод  | Эндпоинт                | Параметры (JSON)                          | Описание                          |
 |--------|-------------------------|------------------------------------------|-----------------------------------|
-| POST   | `/api/expenses`         | `{"amount": float, "category": string, "date": "YYYY-MM-DD", "description": string}` | Добавление нового расхода |
+| POST   | `/api/expenses`         | `{"place": string, "category": string, "amount": float, "date": "YYYY-MM-DD", "comment": string}` | Добавление нового расхода |
 | DELETE | `/api/expenses/{id}`    | -                                        | Удаление записи по ID             |
 | GET    | `/api/expenses`         | -                                        | Получение всех расходов           |
 | GET    | `/api/expenses/{id}`    | -                                        | Получение конкретного расхода     |
