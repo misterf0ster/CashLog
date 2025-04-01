@@ -48,7 +48,8 @@
 
 ### 1. Запуск базы данных
 ```bash
-docker run --name cashlog-db -e POSTGRES_PASSWORD=12345 -p 5432:5432 -d postgres:15
+docker-compose up -d postgres
+cat dump.sql | docker exec -i cashlog_db psql -U postgres -d postgres
 ```
 
 ### 2. Запуск бэкенда 
@@ -62,5 +63,5 @@ go run .
 ```bash
 cd web
 npm install
-npm server.js
+node server.js
 ```
