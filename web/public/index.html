@@ -11,13 +11,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <div class="buttons">
             <button id="themeToggle">🌙</button>
-            <button id="searchBtn">Поиск</button>
+            <button id="searchBtn">Статистика</button>
             <button id="addBtn">Добавить</button>
         </div>
     </div>
@@ -37,6 +38,39 @@
         </tbody>
     </table>
 </div>
+
+<div id="chartContainer" style="display: none; margin-top: 2rem;">
+    <div class="header">
+        <h2>Статистика расходов</h2>
+        <button id="backToList">Вернуться к списку</button>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-wrapper">
+            <canvas id="expenseChart"></canvas>
+        </div>
+        <div class="chart-legend"></div>
+    </div>
+
+    <div class="chart-legend"></div>
+
+    <div class="summary">
+        <h3>Итого по категориям:</h3>
+        <table id="categorySummary">
+            <thead>
+            <tr>
+                <th>Категория</th>
+                <th>Сумма (₽)</th>
+                <th>Доля</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+
+
 <!-- Модальное окно "Добавить" -->
 <div id="addModal" class="modal">
     <div class="modal-content">
@@ -89,13 +123,17 @@
 <div id="searchModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Поиск по дате</h2>
+            <h2>Статистика по дате</h2>
             <span class="close">&times;</span>
         </div>
         <form id="searchForm">
             <div class="form-group">
-                <label for="searchDate">Выберите дату:</label>
-                <input type="text" id="searchDate" placeholder="Выберите дату" data-input>
+                <label for="searchDateFrom">От:</label>
+                <input type="text" id="searchDateFrom" placeholder="Выберите дату" data-input>
+            </div>
+            <div class="form-group">
+                <label for="searchDateTo">До:</label>
+                <input type="text" id="searchDateTo" placeholder="Выберите дату" data-input>
             </div>
             <div class="modal-actions">
                 <button type="submit">Найти</button>

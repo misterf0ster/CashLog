@@ -17,3 +17,20 @@ type Expenses struct {
 	Comment  string    `json:"comment"`
 	Date     time.Time `json:"date"`
 }
+
+type ExpensesResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Data    []Expenses
+}
+
+func (e Expenses) Formatted() map[string]interface{} {
+	return map[string]interface{}{
+		"id":       e.ID,
+		"place":    e.Place,
+		"category": e.Category,
+		"amount":   e.Amount,
+		"date":     e.Date.Format("02.01.2006 15:04"), // DD.MM.YYYY HH:mm
+		"comment":  e.Comment,
+	}
+}

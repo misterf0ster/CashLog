@@ -19,8 +19,8 @@ func main() {
 		AllowHeaders: []string{echo.HeaderContentType},
 	}))
 
-	e.GET("/api/expenses", handlers.GetList)           //Получение списка расходов
-	e.GET("/api/expenses/:date", handlers.GetListData) //Получение данных по дате
+	e.GET("/api/expenses", handlers.GetList)            //Получение списка расходов
+	e.GET("/api/expenses/search", handlers.GetListData) //Получение данных по дате
 
 	e.POST("/api/expenses", handlers.PostEx) //Добавление расхода
 

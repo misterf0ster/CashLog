@@ -10,8 +10,15 @@ function initFlatpickr() {
         });
     }
 
-    if (document.getElementById("searchDate")) {
-        flatpickr("#searchDate", {
+    if (document.getElementById("searchDateFrom")) {
+        flatpickr("#searchDateFrom", {
+            dateFormat: "d.m.Y", // Формат DD.MM.YYYY
+            locale: "ru"
+        });
+    }
+
+    if (document.getElementById("searchDateTo")) {
+        flatpickr("#searchDateTo", {
             dateFormat: "d.m.Y",
             locale: "ru"
         });
@@ -32,7 +39,13 @@ function initDatePickers() {
     });
 
     // Календарь для поиска (только дата)
-    flatpickr("#searchDate", {
+    flatpickr("#searchDateFrom", {
+        dateFormat: "d.m.Y",
+        locale: "ru",
+        static: true
+    });
+
+    flatpickr("#searchDateTo", {
         dateFormat: "d.m.Y",
         locale: "ru",
         static: true
@@ -123,6 +136,11 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Ошибка при получении расходов:", error);
         }
     }
+
+    document.getElementById("backToList").addEventListener("click", () => {
+        document.getElementById("expensesTable").style.display = "table";
+        document.getElementById("chartContainer").style.display = "none";
+    });
 
 
     // Отображение списка
@@ -276,6 +294,146 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function showExpenseAnalysis(expenses, dateFrom, dateTo) {
+        console.log("Полученные расходы:", expenses);
+
+        // Проверяем что expenses - массив
+        if (!Array.isArray(expenses)) {
+            console.error("Ожидался массив расходов:", expenses);
+            alert("Ошибка: сервер вернул неверный формат данных");
+            return;
+        }
+
+        const canvas = document.getElementById('expenseChart');
+        if (!canvas) {
+            console.error('Canvas элемент не найден!');
+            return;
+        }
+
+        if (expenses.length === 0) {
+            alert("Нет данных за выбранный период");
+            return;
+        }
+
+        // Группируем по категориям
+        const categories = {};
+        expenses.forEach(expense => {
+            const category = expense.category || "Без категории";
+            const amount = parseFloat(expense.amount) || 0;
+            categories[category] = (categories[category] || 0) + amount;
+        });
+
+        console.log("Сгруппированные данные:", categories);
+
+        // Обновляем интерфейс
+        document.getElementById("expensesTable").style.display = "none";
+        document.getElementById("chartContainer").style.display = "block";
+        document.querySelector("#chartContainer h2").textContent = `Анализ расходов с ${dateFrom} по ${dateTo}`;
+
+        updateChart(categories);
+        updateSummaryTable(categories);
+    }
+
+    let expenseChartInstance = null;
+    function updateChart(categories) {
+        const ctx = document.getElementById('expenseChart').getContext('2d');
+
+        if (expenseChartInstance) {
+            expenseChartInstance.destroy();
+        }
+
+        const labels = Object.keys(categories);
+        const data = Object.values(categories);
+
+        const backgroundColors = [
+            '#FF6384',
+            '#36A2EB',
+            '#a1581c',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40'
+        ];
+
+        expenseChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 0,
+                    hoverBackgroundColor: backgroundColors.map(color => color + 'CC'), // Добавляем прозрачность при наведении
+                    hoverBorderWidth: 0,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '40%',
+                radius: '80%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const value = context.raw;
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${context.label}: ${value.toFixed(2)} ₽ (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 800
+                }
+            }
+        });
+
+        // Обновляем легенду
+        createCustomLegend(labels, backgroundColors.slice(0, labels.length));
+    }
+
+    function createCustomLegend(labels, colors) {
+        const legendContainer = document.querySelector('.chart-legend');
+        if (!legendContainer) return;
+
+        legendContainer.innerHTML = '';
+
+        labels.forEach((label, i) => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'chart-legend-item';
+
+            const colorBox = document.createElement('div');
+            colorBox.className = 'chart-legend-color';
+            colorBox.style.backgroundColor = colors[i % colors.length];
+
+            const text = document.createElement('span');
+            text.textContent = label;
+
+            legendItem.appendChild(colorBox);
+            legendItem.appendChild(text);
+            legendContainer.appendChild(legendItem);
+
+            legendItem.addEventListener('mouseenter', () => {
+                if (expenseChartInstance) {
+                    expenseChartInstance.setActiveElements([{ datasetIndex: 0, index: i }]);
+                    expenseChartInstance.update();
+                }
+            });
+
+            legendItem.addEventListener('mouseleave', () => {
+                if (expenseChartInstance) {
+                    expenseChartInstance.setActiveElements([]);
+                    expenseChartInstance.update();
+                }
+            });
+        });
+    }
+
     initFlatpickr();
 
     // Добавление нового расхода
@@ -294,16 +452,11 @@ document.addEventListener("DOMContentLoaded", () => {
             comment: document.getElementById("comment").value
         };
 
-        console.log("Отправляемые данные:", expenseData); // Для отладки
+        console.log("Отправляемые данные:", expenseData);
 
         if (!expenseData.place || !expenseData.category || !expenseData.amount) {
             alert("Заполните обязательные поля (место, категория, сумма)");
             return;
-        }
-
-        if (!expenseData.date) {
-            const now = new Date();
-            expenseData.date = now.toISOString();
         }
 
         try {
@@ -320,10 +473,24 @@ document.addEventListener("DOMContentLoaded", () => {
             fetchExpenses();
         } catch (error) {
             console.error("Ошибка при отправке запроса:", error);
+            alert("Произошла ошибка при добавлении записи: " + error.message);
         }
-
-
     });
+
+    function updateSummaryTable(categories) {
+        const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+        const tbody = document.querySelector("#categorySummary tbody");
+
+        tbody.innerHTML = Object.entries(categories)
+            .map(([category, amount]) => `
+            <tr>
+                <td>${category}</td>
+                <td>${amount.toFixed(2)} ₽</td>
+                <td>${total > 0 ? ((amount / total) * 100).toFixed(1) : 0}%</td>
+            </tr>
+        `)
+            .join('');
+    }
 
     // Удаление расхода
     expenseList.addEventListener("click", async (event) => {
@@ -366,32 +533,42 @@ document.addEventListener("DOMContentLoaded", () => {
     // Обработчик формы поиска
     searchForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const date = document.getElementById("searchDate").value;
-
-        if (!date) {
-            alert("Выберите дату для поиска");
-            return;
-        }
+        const dateFrom = document.getElementById("searchDateFrom").value;
+        const dateTo = document.getElementById("searchDateTo").value;
 
         try {
-            const response = await fetch(`${apiBaseUrl}/search?date=${date}`);
-            if (!response.ok) throw new Error("Ошибка поиска");
-            const results = await response.json();
-            renderExpenses(results);
+            const response = await fetch(`${apiBaseUrl}/search?dateFrom=${dateFrom}&dateTo=${dateTo}`);
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(error || "Ошибка сервера");
+            }
+
+            const expenses = await response.json(); // Теперь получаем чистый массив
+            showExpenseAnalysis(expenses, dateFrom, dateTo);
             searchModal.style.display = "none";
         } catch (error) {
-            console.error("Ошибка при поиске:", error);
+            console.error("Ошибка поиска:", error);
+            alert(`Ошибка: ${error.message}`);
         }
     });
 
     // Сброс поиска
     resetSearch.addEventListener("click", () => {
-        document.getElementById("searchDate").value = "";
+        document.getElementById("searchDateFrom").value = "";
+        document.getElementById("searchDateTo").value = "";
+        document.getElementById("chartContainer").style.display = "none";
+        document.getElementById("expensesTable").style.display = "table";
+
+        // Уничтожаем график при сбросе
+        if (expenseChartInstance) {
+            expenseChartInstance.destroy();
+            expenseChartInstance = null;
+        }
+
         fetchExpenses();
         searchModal.style.display = "none";
     });
-
     fetchExpenses();
-
 });
 
