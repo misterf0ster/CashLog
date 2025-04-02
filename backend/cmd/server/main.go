@@ -1,16 +1,16 @@
 package main
 
 import (
+	"backend/internal/api"
+	"backend/internal/storage"
 	"net/http"
-	"tbc/db"
-	"tbc/handlers"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
-	db.PostgreSQL()
+	DataBase.PostgreSQL()
 	e := echo.New()
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
