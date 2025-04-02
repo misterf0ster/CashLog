@@ -1,19 +1,39 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:15
-    container_name: cashlog_db
+    container_name: storage
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "12345"
-      POSTGRES_DB: postgres
+      POSTGRES_DB: cashlog_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./dump.sql:/docker-entrypoint-initdb.d/dump.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Монтируем SQL-дамп
+      - ./backup.dump:/docker-entrypoint-initdb.d/backup.dump  # Или бинарный дамп
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cashlog_db"]
       interval: 5s
+      timeout: 5s
+      retries: 5
+
+  restore:
+    image: postgres:15
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backup.dump:/backup.dump
+    command: >
+      bash -c '
+      until pg_isready -h postgres -U postgres -d cashlog_db; do sleep 1; done
+      pg_restore -h postgres -U postgres -d cashlog_db -F c /backup.dump
+      '
+    restart: on-failure
 
 volumes:
   postgres_data:

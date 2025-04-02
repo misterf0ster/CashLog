@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend/internal/models"
 	"backend/internal/storage"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
@@ -66,42 +67,51 @@ func GetListData(c echo.Context) error {
 
 // <------------------------------------POST--------------------------------------------->
 func PostEx(c echo.Context) error {
-	var req models.Expenses
+	var req struct {
+		Place    string  `json:"place"`
+		Category string  `json:"category"`
+		Amount   float64 `json:"amount"`
+		Comment  string  `json:"comment"`
+		Date     string  `json:"date"`
+	}
+
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  "Error",
-			Message: "Invalid request body: " + err.Error(),
+			Message: "Invalid request body",
 		})
 	}
 
-	// Валидация обязательных полей
-	if req.Place == "" || req.Category == "" || req.Amount <= 0 {
+	// Парсим дату с учетом временной зоны
+	loc, _ := time.LoadLocation("Europe/Moscow")
+	date, err := time.ParseInLocation(time.RFC3339, req.Date, loc)
+	if err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  "Error",
-			Message: "Place, category, and amount are required",
+			Message: "Invalid date format",
 		})
 	}
 
 	expense := models.Expenses{
-		ID:       req.ID,
 		Place:    req.Place,
 		Category: req.Category,
 		Amount:   req.Amount,
 		Comment:  req.Comment,
-		Date:     req.Date,
+		Date:     date,
 	}
 
 	if err := DataBase.DB.Create(&expense).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, models.Response{
 			Status:  "Error",
-			Message: "Could not create expense: " + err.Error(),
+			Message: "Could not create expense",
 		})
 	}
 
-	return c.JSON(http.StatusCreated, models.Response{
-		Status:  "Success",
-		Message: "Expense created successfully",
-	})
+	fmt.Printf("Received date string: %v\n", req.Date)
+	fmt.Printf("Parsed date (local): %v\n", date)
+	fmt.Printf("Parsed date (UTC): %v\n", date.UTC())
+
+	return c.JSON(http.StatusCreated, expense.Formatted())
 }
 
 // <------------------------------------PATCH--------------------------------------->

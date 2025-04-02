@@ -49,21 +49,23 @@
 
 ### 1. Запуск базы данных
 ```bash
-docker run --name cashlog-db -e POSTGRES_PASSWORD=12345 -p 5432:5432 -d postgres:15
-```
+cd CashLog
+docker-compose up -d
+
+````
 
 ### 2. Запуск бэкенда 
 ```bash
-cd api
+cd backend
 go mod download
-go run .
+go run cmd/server/main.go
 ```
 
 ### 3. Запуск фронтенда
 ```bash
-cd web
+cd frontend
 npm install
-npm server.js
+node server.js
 ```
 
 
