@@ -20,7 +20,7 @@ func main() {
 	}))
 
 	e.GET("/api/expenses", handlers.GetList)            //Получение списка расходов
-	e.GET("/api/expenses/search", handlers.GetListData) //Получение данных по дате
+	e.GET("/api/expenses/search", handlers.GetListData) //Получение статистики по дате
 
 	e.POST("/api/expenses", handlers.PostEx) //Добавление расхода
 
