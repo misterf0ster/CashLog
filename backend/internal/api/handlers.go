@@ -3,7 +3,6 @@ package handlers
 import (
 	"backend/internal/models"
 	"backend/internal/storage"
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
@@ -67,51 +66,42 @@ func GetListData(c echo.Context) error {
 
 // <------------------------------------POST--------------------------------------------->
 func PostEx(c echo.Context) error {
-	var req struct {
-		Place    string  `json:"place"`
-		Category string  `json:"category"`
-		Amount   float64 `json:"amount"`
-		Comment  string  `json:"comment"`
-		Date     string  `json:"date"`
-	}
-
+	var req models.Expenses
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  "Error",
-			Message: "Invalid request body",
+			Message: "Invalid request body: " + err.Error(),
 		})
 	}
 
-	// Парсим дату с учетом временной зоны
-	loc, _ := time.LoadLocation("Europe/Moscow")
-	date, err := time.ParseInLocation(time.RFC3339, req.Date, loc)
-	if err != nil {
+	// Валидация обязательных полей
+	if req.Place == "" || req.Category == "" || req.Amount <= 0 {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  "Error",
-			Message: "Invalid date format",
+			Message: "Place, category, and amount are required",
 		})
 	}
 
 	expense := models.Expenses{
+		ID:       req.ID,
 		Place:    req.Place,
 		Category: req.Category,
 		Amount:   req.Amount,
 		Comment:  req.Comment,
-		Date:     date,
+		Date:     req.Date,
 	}
 
 	if err := DataBase.DB.Create(&expense).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, models.Response{
 			Status:  "Error",
-			Message: "Could not create expense",
+			Message: "Could not create expense: " + err.Error(),
 		})
 	}
 
-	fmt.Printf("Received date string: %v\n", req.Date)
-	fmt.Printf("Parsed date (local): %v\n", date)
-	fmt.Printf("Parsed date (UTC): %v\n", date.UTC())
-
-	return c.JSON(http.StatusCreated, expense.Formatted())
+	return c.JSON(http.StatusCreated, models.Response{
+		Status:  "Success",
+		Message: "Expense created successfully",
+	})
 }
 
 // <------------------------------------PATCH--------------------------------------->

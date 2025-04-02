@@ -6,13 +6,14 @@ function initFlatpickr() {
             locale: "ru",
             time_24hr: true,
             defaultDate: new Date(),
-            allowInput: true
+            allowInput: true,
+            time_zone: "Europe/Moscow"
         });
     }
 
     if (document.getElementById("searchDateFrom")) {
         flatpickr("#searchDateFrom", {
-            dateFormat: "d.m.Y", // Формат DD.MM.YYYY
+            dateFormat: "d.m.Y",
             locale: "ru"
         });
     }
@@ -38,7 +39,7 @@ function initDatePickers() {
         allowInput: false
     });
 
-    // Календарь для поиска (только дата)
+    // Календарь для поиска
     flatpickr("#searchDateFrom", {
         dateFormat: "d.m.Y",
         locale: "ru",
@@ -73,9 +74,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!response.ok) throw new Error("Ошибка загрузки данных");
             const expenses = await response.json();
 
-            // Временный вывод в консоль для проверки данных
-            console.log("Данные из БД:", expenses);
-
             renderExpenses(expenses);
         } catch (error) {
             console.error("Ошибка при получении расходов:", error);
@@ -83,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     fetchExpensess();
-    // Код для переключения темы
+
     const themeToggle = document.getElementById("themeToggle");
     const body = document.body;
 
@@ -103,7 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
             ? "☀️"
             : "🌙";
 
-        // Сохраняем в localStorage
         localStorage.setItem("theme",
             body.classList.contains("dark-theme") ? "dark" : "light"
         );
@@ -148,7 +145,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const tableBody = document.getElementById("tableBody");
         tableBody.innerHTML = "";
 
-        // Проверяем на массив
         if (!Array.isArray(expenses)) {
             console.error("Ожидался массив расходов, получено:", expenses);
             return;
@@ -164,7 +160,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 comment: expense.comment
             };
 
-            // Проверяем наличие ID
             if (normalizedExpense.id === undefined) {
                 console.error("Не удалось получить ID для записи:", expense);
                 return;
@@ -179,7 +174,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const dateObj = new Date(normalizedExpense.date);
                     if (!isNaN(dateObj.getTime())) {
-                        formattedDate = dateObj.toLocaleString('ru-RU', {
+                        const moscowTime = new Date(dateObj.getTime() - 3 * 60 * 60 * 1000);
+                        formattedDate = moscowTime.toLocaleString('ru-RU', {
+                            timeZone: 'Europe/Moscow',
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric',
@@ -192,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // Заполняем строку таблицы
+            // Заполню строку таблицы
             row.innerHTML = `
             <td>${normalizedExpense.id}</td>
             <td>${normalizedExpense.place || '—'}</td>
@@ -266,24 +263,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 startX = undefined;
             });
 
-            // Обработчики для тач-устройств
-            row.addEventListener("touchstart", (e) => {
-                startX = e.touches[0].clientX;
-                isSwiped = false;
-            }, { passive: true });
-
-            row.addEventListener("touchmove", (e) => {
-                if (startX === undefined) return;
-                handleMove(e.touches[0].clientX);
-            }, { passive: true });
-
-            row.addEventListener("touchend", () => {
-                if (!isSwiped) {
-                    row.classList.remove("swiped");
-                }
-                startX = undefined;
-            });
-
             // Клик по строке (если не было свайпа)
             row.addEventListener("click", (e) => {
                 if (!isSwiped && startX === undefined) {
@@ -295,9 +274,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function showExpenseAnalysis(expenses, dateFrom, dateTo) {
-        console.log("Полученные расходы:", expenses);
-
-        // Проверяем что expenses - массив
         if (!Array.isArray(expenses)) {
             console.error("Ожидался массив расходов:", expenses);
             alert("Ошибка: сервер вернул неверный формат данных");
@@ -315,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Группируем по категориям
+        // Группирую по категориям
         const categories = {};
         expenses.forEach(expense => {
             const category = expense.category || "Без категории";
@@ -323,15 +299,12 @@ document.addEventListener("DOMContentLoaded", () => {
             categories[category] = (categories[category] || 0) + amount;
         });
 
-        console.log("Сгруппированные данные:", categories);
-
-        // Обновляем интерфейс
         document.getElementById("expensesTable").style.display = "none";
         document.getElementById("chartContainer").style.display = "block";
         document.querySelector("#chartContainer h2").textContent = `Анализ расходов с ${dateFrom} по ${dateTo}`;
 
         updateChart(categories);
-        updateSummaryTable(categories);
+        updateSummaryTable(categories, expenses);
     }
 
     let expenseChartInstance = null;
@@ -362,7 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     data: data,
                     backgroundColor: backgroundColors,
                     borderWidth: 0,
-                    hoverBackgroundColor: backgroundColors.map(color => color + 'CC'), // Добавляем прозрачность при наведении
+                    hoverBackgroundColor: backgroundColors.map(color => color + 'CC'),
                     hoverBorderWidth: 0,
                     hoverOffset: 5
                 }]
@@ -393,7 +366,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // Обновляем легенду
         createCustomLegend(labels, backgroundColors.slice(0, labels.length));
     }
 
@@ -436,19 +408,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initFlatpickr();
 
+
+
     // Добавление нового расхода
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        // Получаем выбранную дату из flatpickr
         const fp = document.getElementById("date")._flatpickr;
         const selectedDate = fp.selectedDates[0];
+
+        const timezoneOffset = selectedDate.getTimezoneOffset() * 60000;
+        const correctedDate = new Date(selectedDate.getTime() - timezoneOffset);
 
         const expenseData = {
             place: document.getElementById("place").value,
             category: document.getElementById("category").value,
             amount: parseFloat(document.getElementById("amount").value),
-            date: selectedDate.toISOString(),
+            date: correctedDate.toISOString(), // Исправленный формат даты
             comment: document.getElementById("comment").value
         };
 
@@ -477,19 +453,51 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    function updateSummaryTable(categories) {
+    function updateSummaryTable(categories, allExpenses) {
         const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
         const tbody = document.querySelector("#categorySummary tbody");
+        tbody.innerHTML = '';
 
-        tbody.innerHTML = Object.entries(categories)
-            .map(([category, amount]) => `
-            <tr>
-                <td>${category}</td>
-                <td>${amount.toFixed(2)} ₽</td>
-                <td>${total > 0 ? ((amount / total) * 100).toFixed(1) : 0}%</td>
-            </tr>
-        `)
-            .join('');
+        Object.entries(categories).forEach(([category, amount]) => {
+            const categoryRow = document.createElement('tr');
+            categoryRow.className = 'category-row';
+            categoryRow.dataset.category = category;
+            categoryRow.innerHTML = `
+            <td>${category}</td>
+            <td>${amount.toFixed(2)} ₽</td>
+            <td>${total > 0 ? ((amount / total) * 100).toFixed(1) : 0}%</td>
+        `;
+            tbody.appendChild(categoryRow);
+            // Обработчик клика
+            categoryRow.addEventListener('click', () => {
+                // Находим все детализированные строки для этой категории
+                const existingDetails = document.querySelectorAll(`tr[data-parent-category="${category}"]`);
+
+                if (existingDetails.length > 0) {
+                    // Если записи уже показаны - удаляем их
+                    existingDetails.forEach(row => row.remove());
+                    categoryRow.classList.remove('expanded');
+                } else {
+                    const categoryExpenses = allExpenses.filter(exp => exp.category === category);
+
+                    categoryExpenses.forEach((expense, index) => {
+                        const detailRow = document.createElement('tr');
+                        detailRow.className = 'expense-details-row';
+                        detailRow.dataset.parentCategory = category;
+
+                        const formattedDate = new Date(expense.date).toLocaleDateString('ru-RU');
+
+                        detailRow.innerHTML = `
+                        <td class="detail-cell">${expense.place || '—'}</td>
+                        <td>${expense.amount} ₽</td>
+                        <td>${formattedDate}</td>
+                    `;
+                        categoryRow.after(detailRow);
+                    });
+                    categoryRow.classList.add('expanded');
+                }
+            });
+        });
     }
 
     // Удаление расхода
@@ -560,7 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("chartContainer").style.display = "none";
         document.getElementById("expensesTable").style.display = "table";
 
-        // Уничтожаем график при сбросе
+        // Уничтожение графика при сбросе
         if (expenseChartInstance) {
             expenseChartInstance.destroy();
             expenseChartInstance = null;
