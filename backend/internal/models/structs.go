@@ -10,7 +10,7 @@ type Response struct {
 }
 
 type Expenses struct {
-	ID       int       `json:"id "`
+	ID       int       `json:"id"`
 	Place    string    `json:"place"`
 	Category string    `json:"category"`
 	Amount   float64   `json:"amount"`

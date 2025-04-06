@@ -1,148 +1,227 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com;">
-    <link rel="icon" href="data:;base64,=">
-    <link rel="icon" href="assets/CashLog.png" type="image/png">
-    <title>CashLog</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="buttons">
-            <button id="themeToggle">🌙</button>
-            <button id="searchBtn">Статистика</button>
-            <button id="addBtn">Добавить</button>
-        </div>
-    </div>
-    <table id="expensesTable">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Место траты</th>
-                <th>Категория</th>
-                <th>Сумма</th>
-                <th>Дата и время</th>
-                <th>Комментарий</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody id="tableBody">
-        </tbody>
-    </table>
-</div>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://npmcdn.com https://unpkg.com;"
+		/>
+		<link rel="icon" href="data:;base64,=" />
+		<link rel="icon" href="assets/CashLog.png" type="image/png" />
+		<title>CashLog</title>
+		<link rel="stylesheet" href="styles.css" />
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+		/>
+		<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+		<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<div class="buttons">
+					<button id="themeToggle">🌙</button>
+					<button id="addBtn">Добавить</button>
+					<button id="searchBtn">Статистика</button>
+				</div>
+			</div>
+			<table id="expensesTable">
+				<thead>
+					<tr>
+						<th>Место траты</th>
+						<th>Категория</th>
+						<th>Сумма</th>
+						<th>Дата и время</th>
+						<th>Комментарий</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody id="tableBody"></tbody>
+			</table>
+		</div>
 
-<div id="chartContainer" style="display: none; margin-top: 2rem;">
-    <div class="header">
-        <h2>Статистика расходов</h2>
-        <button id="backToList">Вернуться к списку</button>
-    </div>
+		<div id="chartContainer" style="display: none; margin-top: 2rem">
+			<div class="header">
+				<h2>Статистика расходов</h2>
+				<button id="backToList">Вернуться к списку</button>
+			</div>
 
-    <div class="chart-container">
-        <div class="chart-wrapper">
-            <canvas id="expenseChart"></canvas>
-        </div>
-        <div class="chart-legend"></div>
-    </div>
+			<div class="chart-container">
+				<div class="chart-wrapper">
+					<canvas id="expenseChart"></canvas>
+				</div>
+				<div class="chart-legend"></div>
+			</div>
 
-    <div class="chart-legend"></div>
+			<div class="chart-legend"></div>
 
-    <div class="summary">
-        <h3>Итого по категориям:</h3>
-        <table id="categorySummary">
-            <thead>
-            <tr>
-                <th style="width: 40%">Категория</th>
-                <th style="width: 30%">Сумма (₽)</th>
-                <th style="width: 30%">Доля</th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-</div>
+			<div class="summary">
+				<h3>Итого по категориям:</h3>
+				<table id="categorySummary">
+					<thead>
+						<tr>
+							<th style="width: 40%">Категория</th>
+							<th style="width: 30%">Сумма (₽)</th>
+							<th style="width: 30%">Доля</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
 
+		<!-- Модальное окно "Добавить" -->
+		<div id="addModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>Новая запись</h2>
+					<span class="close">&times;</span>
+				</div>
+				<form id="expenseForm">
+					<div class="form-group">
+						<label for="place">Место траты:</label>
+						<input type="text" id="place" required />
+					</div>
 
+					<div class="form-group">
+						<label for="category">Категория:</label>
+						<select id="category" required>
+							<option value="">Выберите категорию</option>
+							<option>Транспорт</option>
+							<option>Продукты</option>
+							<option>Рестик</option>
+							<option>Развлечения</option>
+							<option>Аренда</option>
+							<option>Другое</option>
+						</select>
+					</div>
 
-<!-- Модальное окно "Добавить" -->
-<div id="addModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Новая запись</h2>
-            <span class="close">&times;</span>
-        </div>
-        <form id="expenseForm">
-            <div class="form-group">
-                <label for="place">Место траты:</label>
-                <input type="text" id="place" required>
-            </div>
+					<div class="form-group">
+						<label for="amount">Сумма:</label>
+						<input type="number" id="amount" min="0" required />
+					</div>
 
-            <div class="form-group">
-                <label for="category">Категория:</label>
-                <select id="category" required>
-                    <option value="">Выберите категорию</option>
-                    <option>Транспорт</option>
-                    <option>Продукты</option>
-                    <option>Рестик</option>
-                    <option>Развлечения</option>
-                    <option>Аренда</option>
-                    <option>Другое</option>
-                </select>
-            </div>
+					<div class="form-group">
+						<label for="date">Дата и время:</label>
+						<input
+							type="text"
+							id="date"
+							placeholder="Выберите дату и время"
+							data-input
+						/>
+					</div>
 
-            <div class="form-group">
-                <label for="amount">Сумма:</label>
-                <input type="number" id="amount" min="0" required>
-            </div>
+					<div class="form-group">
+						<label for="comment">Комментарий:</label>
+						<textarea
+							id="comment"
+							rows="3"
+							placeholder="Необязательный комментарий"
+						></textarea>
+					</div>
 
-            <div class="form-group">
-                <label for="date">Дата и время:</label>
-                <input type="text" id="date" placeholder="Выберите дату и время" data-input>
-            </div>
+					<div class="modal-actions">
+						<button type="submit">Добавить</button>
+					</div>
+				</form>
+			</div>
+		</div>
 
-            <div class="form-group">
-                <label for="comment">Комментарий:</label>
-                <textarea id="comment" rows="3" placeholder="Необязательный комментарий"></textarea>
-            </div>
+		<!-- Модальное окно поиска -->
+		<div id="searchModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>Статистика по дате</h2>
+					<span class="close">&times;</span>
+				</div>
+				<form id="searchForm">
+					<div class="form-group">
+						<label for="searchDateFrom">От:</label>
+						<input
+							type="text"
+							id="searchDateFrom"
+							placeholder="Выберите дату"
+							data-input
+						/>
+					</div>
+					<div class="form-group">
+						<label for="searchDateTo">До:</label>
+						<input
+							type="text"
+							id="searchDateTo"
+							placeholder="Выберите дату"
+							data-input
+						/>
+					</div>
+					<div class="modal-actions">
+						<button type="submit">Найти</button>
+						<button type="button" id="resetSearch">Сбросить</button>
+					</div>
+				</form>
+			</div>
+		</div>
 
-            <div class="modal-actions">
-                <button type="submit">Добавить</button>
-            </div>
-        </form>
-    </div>
-</div>
+		<!-- Модальное окно "Редактировать" -->
+		<div id="editModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>Редактировать запись</h2>
+					<span class="close">&times;</span>
+				</div>
+				<form id="editForm">
+					<input type="hidden" id="editId" />
+					<div class="form-group">
+						<label for="editPlace">Место траты:</label>
+						<input type="text" id="editPlace" required />
+					</div>
 
-<!-- Модальное окно поиска -->
-<div id="searchModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>Статистика по дате</h2>
-            <span class="close">&times;</span>
-        </div>
-        <form id="searchForm">
-            <div class="form-group">
-                <label for="searchDateFrom">От:</label>
-                <input type="text" id="searchDateFrom" placeholder="Выберите дату" data-input>
-            </div>
-            <div class="form-group">
-                <label for="searchDateTo">До:</label>
-                <input type="text" id="searchDateTo" placeholder="Выберите дату" data-input>
-            </div>
-            <div class="modal-actions">
-                <button type="submit">Найти</button>
-                <button type="button" id="resetSearch">Сбросить</button>
-            </div>
-        </form>
-    </div>
-</div>
+					<div class="form-group">
+						<label for="editCategory">Категория:</label>
+						<select id="editCategory" required>
+							<option value="">Выберите категорию</option>
+							<option>Транспорт</option>
+							<option>Продукты</option>
+							<option>Рестик</option>
+							<option>Развлечения</option>
+							<option>Аренда</option>
+							<option>Другое</option>
+						</select>
+					</div>
 
-<script src="/src/app.js" defer></script>
-</body>
+					<div class="form-group">
+						<label for="editAmount">Сумма:</label>
+						<input type="number" id="editAmount" min="0" required />
+					</div>
+
+					<div class="form-group">
+						<label for="editDate">Дата и время:</label>
+						<input
+							type="text"
+							id="editDate"
+							placeholder="Выберите дату и время"
+							data-input
+						/>
+					</div>
+
+					<div class="form-group">
+						<label for="editComment">Комментарий:</label>
+						<textarea
+							id="editComment"
+							rows="3"
+							placeholder="Необязательный комментарий"
+						></textarea>
+					</div>
+
+					<div class="modal-actions">
+						<button type="submit">Сохранить</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<script src="/src/app.js" defer></script>
+	</body>
 </html>

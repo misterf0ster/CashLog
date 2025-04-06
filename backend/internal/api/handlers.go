@@ -2,11 +2,12 @@ package handlers
 
 import (
 	"backend/internal/models"
-	"backend/internal/storage"
-	"github.com/labstack/echo/v4"
+	DataBase "backend/internal/storage"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/labstack/echo/v4"
 )
 
 // <------------------------------------GET--------------------------------------->
@@ -105,9 +106,18 @@ func PostEx(c echo.Context) error {
 }
 
 // <------------------------------------PATCH--------------------------------------->
-func PatchHandler(c echo.Context) error {
+func PatchUpdate(c echo.Context) error {
 	idParam := c.Param("id")
 	id, err := strconv.Atoi(idParam)
+
+	var requestData struct {
+		Place    string  `json:"place"`
+		Category string  `json:"category"`
+		Amount   float64 `json:"amount"`
+		Date     string  `json:"date"`
+		Comment  string  `json:"comment"`
+	}
+
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  "Error",
@@ -115,49 +125,57 @@ func PatchHandler(c echo.Context) error {
 		})
 	}
 
-	var updates map[string]interface{}
-	if err := c.Bind(&updates); err != nil {
+	if err := c.Bind(&requestData); err != nil {
 		return c.JSON(http.StatusBadRequest, models.Response{
 			Status:  "Error",
 			Message: "Invalid input",
 		})
 	}
 
-	// Обновляем только разрешенные поля
-	allowedFields := []string{"place", "category", "amount", "comment", "date"}
-	for key := range updates {
-		if !contains(allowedFields, key) {
-			return c.JSON(http.StatusBadRequest, models.Response{
-				Status:  "Error",
-				Message: "Invalid field: " + key,
-			})
-		}
-	}
+	// // Обновляем только разрешенные поля
+	// allowedFields := []string{"place", "category", "amount", "comment", "date"}
+	// for key := range requestData {
+	// 	if !contains(allowedFields, key) {
+	// 		return c.JSON(http.StatusBadRequest, models.Response{
+	// 			Status:  "Error",
+	// 			Message: "Invalid field: " + key,
+	// 		})
+	// 	}
+	// }
 
 	// Обновление записи
-	result := DataBase.DB.Model(&models.Expenses{}).Where("id = ?", id).Updates(updates)
+	result := DataBase.DB.Model(&models.Expenses{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"place":    requestData.Place,
+			"category": requestData.Category,
+			"amount":   requestData.Amount,
+			"date":     requestData.Date,
+			"comment":  requestData.Comment,
+		})
+
 	if result.Error != nil {
 		return c.JSON(http.StatusInternalServerError, models.Response{
 			Status:  "Error",
-			Message: "Could not update expense",
+			Message: "Database update failed",
 		})
 	}
 
 	return c.JSON(http.StatusOK, models.Response{
 		Status:  "Success",
-		Message: "Expense updated",
+		Message: "Expense updated successfully",
 	})
 }
 
-// Вспомогательная функция для проверки полей
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
+// Функция для проверки полей
+// func contains(slice []string, item string) bool {
+// 	for _, s := range slice {
+// 		if s == item {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 // <------------------------------------DELETE--------------------------------------->
 func Delete(c echo.Context) error {

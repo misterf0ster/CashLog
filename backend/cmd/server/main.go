@@ -1,8 +1,8 @@
 package main
 
 import (
-	"backend/internal/api"
-	"backend/internal/storage"
+	handlers "backend/internal/api"
+	DataBase "backend/internal/storage"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -22,9 +22,9 @@ func main() {
 	e.GET("/api/expenses", handlers.GetList)            //Получение списка расходов
 	e.GET("/api/expenses/search", handlers.GetListData) //Получение статистики по дате
 
-	e.POST("/api/expenses", handlers.PostEx) //Добавление расхода
-
-	e.DELETE("/api/expenses/:id", handlers.Delete) //Удаление расхода
+	e.POST("/api/expenses", handlers.PostEx)           //Добавление расхода
+	e.PATCH("/api/expenses/:id", handlers.PatchUpdate) //Редактирование расхода
+	e.DELETE("/api/expenses/:id", handlers.Delete)     //Удаление расхода
 
 	e.Start(":8080")
 }
