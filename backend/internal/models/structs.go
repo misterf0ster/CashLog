@@ -4,17 +4,6 @@ import (
 	"time"
 )
 
-type RequestData struct {
-	ID        string    `json:"id"`
-	Place     string    `json:"place"`
-	Category  string    `json:"category"`
-	Amount    float64   `json:"amount"`
-	Date      string    `json:"date"`
-	Comment   string    `json:"comment"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"update_at"`
-}
-
 type Response struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
